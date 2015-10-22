@@ -1,1 +1,11 @@
-/* Your CSS here... */
+span{
+	font-family: helvetica;
+	font-size: 1em;
+	color: orange;
+}
+
+p {
+	font-family: helvetica;
+	font-size: 2em;
+	color: blue;
+}
