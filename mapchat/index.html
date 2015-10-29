@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+
+<html>
+
+	<head>
+		<title>Geolocation Map Example</title>
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+		<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=true"></script>
+		<link rel="stylesheet" href="style.css" />
+		
+		<script>
+			// adapted source code from http://tuftsdev.github.io/WebProgramming/examples/google_maps/geolocation_map.html 
+			var myLat = 0;
+			var myLng = 0;
+			var request = new XMLHttpRequest();
+			var me = new google.maps.LatLng(myLat, myLng);
+			var myOptions = {
+						zoom: 13, // The larger the zoom number, the bigger the zoom
+						center: me,
+						mapTypeId: google.maps.MapTypeId.ROADMAP
+					};
+			var map;
+			var marker;
+			var infowindow = new google.maps.InfoWindow();
+			
+			function init()
+			{
+				map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+				getMyLocation();
+			}
+			
+			function getMyLocation() {
+				if (navigator.geolocation) { // the navigator.geolocation object is supported on your browser
+					navigator.geolocation.getCurrentPosition(function(position) {
+						myLat = position.coords.latitude;
+						myLng = position.coords.longitude;
+						renderMap();
+					});
+				}
+				else {
+					alert("Geolocation is not supported by your web browser.  What a shame!");
+				}
+			}
+
+			function renderMap()
+			{
+				// for loop to put everyone except me on map //
+
+				for (key in locations) {
+					//if (locations[key]["login"]!="SheriMcKelvey") {
+						person = new google.maps.LatLng(locations[key]["lat"], locations[key]["lng"]);
+						pmarker = new google.maps.Marker({
+							position: person,
+							title: locations[key]["login"]+" says: "+locations[key]["message"]+" - from "+distance()+" km away"
+						});
+						pmarker.setMap(map);
+						google.maps.event.addListener(pmarker, 'click', function() {
+							infowindow.setContent(this.title);
+							infowindow.open(map, this);
+						});
+					//}
+				}
+
+				me = new google.maps.LatLng(myLat, myLng);
+				// Update map and go there...
+				map.panTo(me);
+	
+				// Create a marker
+				marker = new google.maps.Marker({
+					position: me,
+					title: message,
+					icon: "xtina.png",
+				});
+				marker.setMap(map);
+					
+				// Open info window on click of marker
+				google.maps.event.addListener(marker, 'click', function() {
+					infowindow.setContent(marker.title);
+					infowindow.open(map, marker);
+				});
+			}
+
+			var http = new XMLHttpRequest();
+
+			var login = "SheriMcKelvey";
+			var message = "Too dirrty to clean my act up";
+			var params = "login="+login+"&lat="+myLat+"&lng="+myLng+"&message="+message;
+			var url = "https://secret-about-box.herokuapp.com/sendLocation";
+			http.open("POST", url, true);
+
+			http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+
+			http.onreadystatechange = function() {
+			    if(http.readyState == 4 && http.status == 200){
+			        text = http.responseText;
+			        locations = JSON.parse(text);
+			    }
+			}
+			http.send(params);
+
+
+			function distance () {
+				//code from http://stackoverflow.com/questions/14560999/using-the-haversine-formula-in-javascript
+				Number.prototype.toRad = function() {
+				   return this * Math.PI / 180;
+				}
+
+				var lat2 = myLat; 
+				var lon2 = myLng; 
+				var lat1 = locations[key]["lat"]; 
+				var lon1 = locations[key]["lng"]; 
+
+				var R = 6371; // km 
+				//has a problem with the .toRad() method below.
+				var x1 = lat2-lat1;
+				var dLat = x1.toRad();  
+				var x2 = lon2-lon1;
+				var dLon = x2.toRad();  
+				var a = Math.sin(dLat/2) * Math.sin(dLat/2) + 
+				                Math.cos(lat1.toRad()) * Math.cos(lat2.toRad()) * 
+				                Math.sin(dLon/2) * Math.sin(dLon/2);  
+				var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+				var d = R * c; 
+
+				return(d);
+			}
+
+
+		</script>
+	</head>
+	
+	<body onload="init()">
+		<div id="map_canvas"></div>
+	</body>
+</html>
