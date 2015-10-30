@@ -15,7 +15,7 @@
 			var request = new XMLHttpRequest();
 			var me = new google.maps.LatLng(myLat, myLng);
 			var myOptions = {
-						zoom: 13, // The larger the zoom number, the bigger the zoom
+						zoom: 13,
 						center: me,
 						mapTypeId: google.maps.MapTypeId.ROADMAP
 					};
@@ -30,7 +30,7 @@
 			}
 			
 			function getMyLocation() {
-				if (navigator.geolocation) { // the navigator.geolocation object is supported on your browser
+				if (navigator.geolocation) { 
 					navigator.geolocation.getCurrentPosition(function(position) {
 						myLat = position.coords.latitude;
 						myLng = position.coords.longitude;
@@ -44,21 +44,18 @@
 
 			function renderMap()
 			{
-				// for loop to put everyone except me on map //
 
 				for (key in locations) {
-					//if (locations[key]["login"]!="SheriMcKelvey") {
 						person = new google.maps.LatLng(locations[key]["lat"], locations[key]["lng"]);
 						pmarker = new google.maps.Marker({
 							position: person,
-							title: locations[key]["login"]+" says: "+locations[key]["message"]+" - from "+distance()+" km away"
+							title: locations[key]["login"]+" says: "+locations[key]["message"]+" - from "+distance()+" miles away"
 						});
 						pmarker.setMap(map);
 						google.maps.event.addListener(pmarker, 'click', function() {
 							infowindow.setContent(this.title);
 							infowindow.open(map, this);
 						});
-					//}
 				}
 
 				me = new google.maps.LatLng(myLat, myLng);
@@ -81,13 +78,11 @@
 			}
 
 			var http = new XMLHttpRequest();
-
 			var login = "SheriMcKelvey";
 			var message = "Too dirrty to clean my act up";
 			var params = "login="+login+"&lat="+myLat+"&lng="+myLng+"&message="+message;
 			var url = "https://secret-about-box.herokuapp.com/sendLocation";
 			http.open("POST", url, true);
-
 			http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
 			http.onreadystatechange = function() {
@@ -97,7 +92,6 @@
 			    }
 			}
 			http.send(params);
-
 
 			function distance () {
 				//code from http://stackoverflow.com/questions/14560999/using-the-haversine-formula-in-javascript
@@ -121,11 +115,9 @@
 				                Math.sin(dLon/2) * Math.sin(dLon/2);  
 				var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
 				var d = R * c; 
-
+				d = d / 1.609344;
 				return(d);
 			}
-
-
 		</script>
 	</head>
 	
