@@ -6,7 +6,52 @@
 	<title>Captain's Log</title>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 	<script>
-	  // Your work will be done here...
+	  $("document").ready(function() {
+	  		var year;
+	  		var month;
+	  		var day;
+	  		var hour;
+	  		var minute;
+	  		var second;
+	  		var weekday;
+	  		var input;
+	  		var data = "";
+	  		var prevdata = "";
+	  		var tempcounter;
+			if (localStorage.getItem('counter') == undefined) {
+				localStorage.setItem('counter', 0); // if first time
+			}
+
+			tempcounter = localStorage.getItem('counter');
+
+			for (var i = 0; i < tempcounter; i++) {
+				prevdata = localStorage.getItem(i);
+				$("#log").prepend(prevdata);
+			}
+
+	  	    //got enter clicked code from http://stackoverflow.com/questions/7060750/detect-the-enter-key-in-an-text-input-field
+			$("#msg").keyup(function (e) {
+			    if (e.keyCode == 13) {
+			    	var date = new Date();
+			    	year = date.getFullYear();
+			    	month = date.getMonth();
+			    	day = date.getDate();
+			    	hour = date.getHours();
+			    	minute = date.getMinutes();
+			    	second = date.getSeconds();
+			    	weekday = date.getDay();
+			    	input = $("#msg").val();
+			    	data = month + "/" + day + "/" + year + " " + hour + ":" + minute + ":" + second + " - " + input + "<br></br>";
+			    	$("#log").prepend(data);
+			    	tempcounter = localStorage.getItem('counter');
+			    	localStorage.setItem(tempcounter, data);
+			    	tempcounter++;
+			    	localStorage.setItem('counter', tempcounter);
+			    	$("#msg").val("");
+			    }
+			});
+
+		});
 	</script>
 </head>
 
