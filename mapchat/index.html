@@ -32,7 +32,6 @@
 			function getMyLocation() {
 				if (navigator.geolocation) { 
 					navigator.geolocation.getCurrentPosition(function(position) {
-						console.log("setting lng lon");
 						myLat = position.coords.latitude;
 						myLng = position.coords.longitude;
 						makeRequest();
@@ -85,7 +84,6 @@
 				var locations;
 				//new URL added
 				var url = "https://pacific-crag-7478.herokuapp.com/sendLocation";
-				console.log("ABOUT TO O")
 				http.open("POST", url, true);
 				http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
