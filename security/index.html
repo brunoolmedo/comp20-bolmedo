@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Security Report</title>
+    <link rel="stylesheet" type="text/css" href="style.css"/>
+    <meta charset="UTF-8">
+</head>
+<body>
+<h1>Security Assessment</h1>
+
+<p>Prepared by Bruno Olmedo 12/8/2015</p>
+
+<h2>Introduction</h2>
+
+<p>This assessment tests the security of the <a href="http://calm-headland-3864.herokuapp.com">Server for Mapchat</a> web application developed by Daniel Navon, as well as his Mapchat web application. According to the specifications he followed, The Server for Mapchat from Assignment 3 is a server-side web application that builds JSON-based API's. It receives requests in a specific format, stores them in a database, and responds with the data that it accumulates as it receives requests. It also offers a web interface where users can see all requests, or checkins, submitted, and where they can search for latest checkins by username. Mapchat sends a request to a server with the user's information and receives data in JSON format that it then displays on a map. The vulnerabilities in these applications make it unfit for public use. This document outlines a few problems and solutions.</p> 
+
+<h2>Methodology</h2>
+
+<p>I tested all the code "black-box," working off of assumptions of what I believed might be wrong with the code using <code>curl</code> and found a couple vulnerabilities. Taking a look at the code that my partner gave me access to, I found the reasons why I was able to fudge with his program, and found more vulnerabilities. Dan made me a collaborator for his project on Heroku, so I tested directly through Heroku. I ran his mapchat code locally, though, to see if one of my hacks would break it (which it did).</p>
+
+<h2>Abstract of Findings</h2>
+
+<p>Dan forgot to NEVER EVER TRUST USER INPUT, which led to all the vulnerabilities I found in his web application. The application assumed there wouldn't be malicious intent from users, which, unfortunately, by human nature, there will always be. I was able to insert images into a checkin that was then displayed on his application. I was also able to make reqeusts/checkins using values for lat and lng that would crash applications that get their data from this server (i.e. mapchat). Also, the application is open to being overloaded with client requests to the point of crashing if someone is feeling malicious enough (DDoS). Proper security checks (that are mostly relatively simple) must be implemented to prevent attacks.</p>
+
+<h2>Issues Found</h2>
+
+<ol>
+<li><p><strong>Cross-Cross-Site Scripting</strong></p>
+
+<ul>
+<li>High: This is very bad. Applications that rely on the server to have the information correctly formatted could be affected by faulty, injected data, causing people to not trust and not want to use the application. Fortunately, there is a simple solution.</li>
+<li>Since the data submitted in the POST API is not <a href="https://www.owasp.org/index.php/XSS_(Cross_Site_Scripting)_Prevention_Cheat_Sheet">escaped</a>, Javascript or HTML can be inserted in place of a message, lat, or lng value, and a client's application would execute these injections if it does not include its own layers of security for escaping. Running the curl command below injected an image into the web interface of the server. Thankfully, in this case, the image is pleasing, but it could have been something very inappropriate.</li>
+<li><img src="curl_britney.png" alt="curl-injection-command" title="Curl injection command" /></li>
+<li><img src="britney_in_page.png" alt="post-injection" title="Client site after injection of Britney in Toxic Video" /></li>
+<li>THERE IS MORE: I was also able to redirect the page to <a href="http://deshommesetdeschatons.tumblr.com/">my favorite blog</a> with this curl command. This worked if the redirect was in either the lat, lng, or message fields. Unless I manually clear it, now Dan's site redirects to a blog about cats and sexy men.</li>
+ 
+<li><img src="curl_hommes_chatons.png" alt="curl-injection-command" title="Curl injection command" /></li>
+<li><img src="hommes_chatons.png" alt="post-injection" title="Client site after injection of Cats and Men blog redirect" /></li>
+
+<li>The solution for this issue is not difficult to implement. Dan must escape the input before inserting it into the database. Characters that are especially threatening, such as the greater than and less than signs, should be escaped to their HTML counterparts. The code could also limit the characters that are allowed, having a filter for what can and cannot be inserted into the database.</li>
+</ul></li>
+
+<li><p><strong>Invalid Values</strong></p>
+<ul>
+<li>Moderate: Inserting invalid values for lat and lng may result in applications getting their data from this server crashing if they don't have measures of checking the validity of the data received, which would make people not trust this server.</li>
+<li>When I was reading the code, I noticed Dan had not set limits for valid lat and lng inputs, so I tried submitting lat and lng values that are way out of what is realistic. His server took the values without any trouble. This means that if an application (i.e. mapchat) gets its location data from this server, it will not work (unless it has its own ways of verifying values in its code) because it will not be able to find latitudes and longitudes of the submitted values (7500, 6000).</li>
+<li><img src="curl_large_lat_lng.png" alt="Curl command too large lat and lng" title="Curl lat and lng values too large" /></li>
+<li><img src="large_lat_lng_page.png" alt="Server interface with too large lat and lng" title="Server interface with invalid lat and lng" /></li>
+<li>This actually broke his mapchat when I tried to get the data from his server, as you can see below</li>
+<li><img src="broken_mapchat.png" alt="Broken mapchat" title="Broken mapchat" /></li>
+<li>The solution to this problem is very simple. He just needs to add if statements that check the data before it is inserted into the database to make sure that the lat and lng values are valid. These if statements would set the upper and lower limits of the values that are allowed for lat and lng.</li>
+</ul></li>
+
+<li><p><strong>Mapchat takes Invalid Values</strong></p>
+<ul>
+<li>High: If the data is not verified, the application is very likely to crash. It could also execute malicious injected inputs.</li>
+<li>One cannot trust anyone in the world of computer science. Servers, like the one being discussed, could send in invalid data that will crash the application. That's exactly what happened above. You can see in the code here that no measures were taken to verify the values of the lat and lng.</li>
+ 
+<li><img src="dan_mapchat_code.png" alt="Screenshot of Mapchat Code that doesn't verify values" title="Mapchat code screenshot" /></li>
+ 
+<li>The solution for this problem is also a series of if statements that check that the values lie within the boundaries of normal latitudes and longitudes on Earth.</li>
+</ul></li>
+
+<li><p><a href="http://www.digitalattackmap.com/understanding-ddos/">DDoS</a></p>
+<ul>
+<li>High: The server is very vulnerable to a Distributed denial of service (DDoS) attack.</li>
+<li>Just like the U.S. launched a DDoS attack on North Korea (<a href="http://www.nytimes.com/2014/12/23/world/asia/attack-is-suspected-as-north-korean-internet-collapses.html">let's be real, it happened</a>), someone could orchestrate an attack against this server app and easily overwhelm it with requests until it crashes because it cannot handle such a large volume of requests. As we can see below, there are hardly any measures taken in the code to prevent such an attack (which is difficult to prevent)</li>
+ 
+<li><img src="dan_post_code.png" alt="Dan's post code screenshot" title="Dan's post code" /></li>
+
+<li>There are ways to prevent DDoS attacks. <a href="http://www.esecurityplanet.com/network-security/5-tips-for-fighting-ddos-attacks.html">Buying more bandwith, rate limiting the router, and dropping suspicious requests can help. However, just calling a specialist for help when you're under attack is probably your best bet</a>, even if you've taken measures for prevention.</li>
+</ul></li>
+
+</ol>
+
+<h2>Conclusion</h2>
+
+<p>Issues with Mapchat and the Mapchat server make it easy to make both applications inoperable. The recommendations above should reduce the vulnerability of both applications to the basic attacks we've learned about. Most changes are easy to implement, the most difficult one being the prevention of DDoS attacks, which have become increasingly prominent and powerful. The basic fixes should be cheap to implement (~$500-$700). Preventing DDoS is much more complicated and costly. However, it's better to be safe than sorry, isn't that right, <a href = "http://time.com/3695118/sony-hack-the-interview-costs/">Sony?</a></p>
+</body>
+</html>
